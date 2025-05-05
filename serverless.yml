@@ -221,10 +221,10 @@ resources:
                 ArnEquals:
                   aws:SourceArn: !Ref SnsAppointment
 
-    RdsInstancePE:
+    RdsInstancePEMysql:
       Type: AWS::RDS::DBInstance
       Properties:
-        DBInstanceIdentifier: rds-pe-instance
+        DBInstanceIdentifier: rds-pe-instance-mysql
         DBName: appointments_pe
         AllocatedStorage: 20
         DBInstanceClass: db.t3.micro
@@ -239,10 +239,10 @@ resources:
           - Key: Country
             Value: PE
 
-    RdsInstanceCL:
+    RdsInstanceCLMysql:
       Type: AWS::RDS::DBInstance
       Properties:
-        DBInstanceIdentifier: rds-cl-instance
+        DBInstanceIdentifier: rds-cl-instance-mysql
         DBName: appointments_cl
         AllocatedStorage: 20
         DBInstanceClass: db.t3.micro

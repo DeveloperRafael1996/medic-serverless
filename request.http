@@ -1,8 +1,8 @@
-POST https://c1kmgtof79.execute-api.us-east-1.amazonaws.com/dev/appointments
+POST https://nfzjbtrwm4.execute-api.us-east-1.amazonaws.com/dev/appointments
 Content-Type: application/json
 
 {
   "insuredId": "12345",
-  "scheduleId": 8006,
+  "scheduleId": 1112,
   "countryISO": "CL"
 }

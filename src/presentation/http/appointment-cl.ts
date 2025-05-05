@@ -5,18 +5,15 @@ import { EventBridgeRepositoryImpl } from "../../infrastructure/repositories/Eve
 
 export const handler = async (event: any) => {
   const topicArn = process.env["EVENT_BUS_NAME"] || "";
-
-  console.log("Event Appoinment", event);
-
   const { body } = DataSourceService.getBody(event);
   const { insuredId, scheduleId, countryISO } = body;
 
   const repo = new MysqlAppointmentCLRepository();
   const eventBrigde = new EventBridgeRepositoryImpl();
-
   const useCase = new RegisterAppointmentRelational(repo, eventBrigde);
 
   console.log("Body CL", body);
+  
   await useCase.execute({
     insuredId,
     scheduleId,

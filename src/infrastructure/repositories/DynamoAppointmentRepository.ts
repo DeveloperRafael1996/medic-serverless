@@ -1,4 +1,9 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  UpdateItemCommand,
+} from "@aws-sdk/client-dynamodb";
 import { Appointment } from "../../domain/entities/Appointment";
 import { AppointmentRepository } from "../../application/use-cases/RegisterAppointment";
 
@@ -20,5 +25,42 @@ export class DynamoAppointmentRepositoryImpl implements AppointmentRepository {
     });
 
     await this.client.send(cmd);
+  }
+
+  async markAsCompleted(id: string): Promise<void> {
+    console.log("Id", id);
+
+    const getCmd = new GetItemCommand({
+      TableName: "Appointment",
+      Key: {
+        id: { S: id },
+      },
+    });
+
+    const result = await this.client.send(getCmd);
+
+    console.log("Get Appoiment");
+    console.log(result.Item);
+
+    if (!result.Item) {
+      throw new Error(`Appointment With Id ${id} Not Found`);
+    }
+
+    const updateCmd = new UpdateItemCommand({
+      TableName: "Appointment",
+      Key: {
+        id: { S: id },
+      },
+      UpdateExpression: "SET #status = :status, updatedAt = :updatedAt",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":status": { S: "completed" },
+        ":updatedAt": { S: new Date().toISOString() },
+      },
+    });
+
+    await this.client.send(updateCmd);
   }
 }
