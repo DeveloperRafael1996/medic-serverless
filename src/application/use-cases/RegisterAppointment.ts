@@ -1,12 +1,21 @@
 import { Appointment } from "../../domain/entities/Appointment";
 import { SnsPublisherRepository } from "./SnsPublisherRepository";
 
+export interface AppointmentDTO {
+  id: string;
+  insuredId: string;
+  scheduleId: number;
+  countryISO: string;
+  status: string;
+}
+
 export interface AppointmentRepository {
   save(appointment: Appointment): Promise<void>;
 }
 export interface AppointmentDynamodb {
   save(appointment: Appointment): Promise<void>;
   markAsCompleted(id: string): Promise<void>;
+  findByInsuredId(insuredId: string): Promise<AppointmentDTO[]>;
 }
 
 export class RegisterAppointment {
@@ -32,8 +41,6 @@ export class RegisterAppointment {
   }
 
   async update(data: { id: string }) {
-    console.log("Register", data.id);
-
     await this.repo.markAsCompleted(data.id);
   }
 }

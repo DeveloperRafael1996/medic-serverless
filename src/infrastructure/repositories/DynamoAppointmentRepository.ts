@@ -2,13 +2,46 @@ import {
   DynamoDBClient,
   GetItemCommand,
   PutItemCommand,
+  ScanCommand,
+  ScanCommandInput,
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { Appointment } from "../../domain/entities/Appointment";
-import { AppointmentDynamodb } from "../../application/use-cases/RegisterAppointment";
+import {
+  AppointmentDTO,
+  AppointmentDynamodb,
+} from "../../application/use-cases/RegisterAppointment";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 export class DynamoAppointmentRepositoryImpl implements AppointmentDynamodb {
   private client = new DynamoDBClient({});
+
+  async findByInsuredId(insuredId: string): Promise<AppointmentDTO[]> {
+    const input: ScanCommandInput = {
+      TableName: "Appointment",
+      ExpressionAttributeNames: {
+        "#ID": "id",
+        "#INSUREDID": "insuredId",
+        "#STATUS": "status"
+      },
+      ExpressionAttributeValues: {
+        ":insuredId": {
+          S: insuredId,
+        },
+      },
+      FilterExpression: "#INSUREDID= :insuredId",
+      ProjectionExpression: "#ID, #INSUREDID, #STATUS",
+    };
+
+    const command = new ScanCommand(input);
+    const result = await this.client.send(command);
+
+    if (result && result.Items && result.Items.length > 0) {
+      return result.Items.map((item) => unmarshall(item) as AppointmentDTO);
+    }
+
+    return [];
+  }
 
   async save(appointment: Appointment): Promise<void> {
     const cmd = new PutItemCommand({

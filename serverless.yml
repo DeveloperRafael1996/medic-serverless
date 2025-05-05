@@ -42,7 +42,7 @@ provider:
 
 functions:
   Appointment:
-    handler: src/presentation/http/appointment.handler
+    handler: src/presentation/http/Appointment.handler
     events:
       - http:
           path: /appointments
@@ -55,10 +55,16 @@ functions:
     environment:
       SNS_APPOINTMENT:
         Ref: SnsAppointment
-    
 
+  listByInsured:
+    handler: src/presentation/http/List-by-insured.handler
+    events:
+      - http:
+          path: /appointments/insured/{insuredId}
+          method: get
+    
   AppointmentPE:
-    handler: src/presentation/http/appointment-pe.handler
+    handler: src/presentation/http/Appointment-pe.handler
     events:
       - sqs:
           arn:
@@ -66,9 +72,8 @@ functions:
     environment:
       EVENT_BUS_NAME: !Ref MyEventBus
 
-
   AppointmentCL:
-    handler: src/presentation/http/appointment-cl.handler
+    handler: src/presentation/http/Appointment-cl.handler
     events:
       - sqs:
           arn:
