@@ -1,0 +1,308 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: djzm80
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: medical-records
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: medical-records
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:Scan
+          Resource:
+            Fn::GetAtt:
+              - TableAppointment
+              - Arn
+        - Action: SNS:Publish
+          Effect: Allow
+          Resource:
+            Ref: SnsAppointment
+        - Effect: Allow
+          Action:
+            - 'events:PutEvents'
+          Resource: "*" 
+  environment:
+    DB_HOST_PE: ${env:DB_HOST_PE}
+    DB_USER_PE: ${env:DB_USER_PE}
+    DB_PASS_PE: ${env:DB_PASS_PE}
+    DB_NAME_PE: ${env:DB_NAME_PE}
+
+    DB_HOST_CL: ${env:DB_HOST_CL}
+    DB_USER_CL: ${env:DB_USER_CL}
+    DB_PASS_CL: ${env:DB_PASS_CL}
+    DB_NAME_CL: ${env:DB_NAME_CL}
+
+functions:
+  Appointment:
+    handler: src/presentation/http/appointment.handler
+    events:
+      - http:
+          path: /appointments
+          method: post
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - MySqsUpdate
+              - Arn
+    environment:
+      SNS_APPOINTMENT:
+        Ref: SnsAppointment
+    
+
+  AppointmentPE:
+    handler: src/presentation/http/appointment-pe.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [SqsPERU, Arn]
+    environment:
+      EVENT_BUS_NAME: !Ref MyEventBus
+
+
+  AppointmentCL:
+    handler: src/presentation/http/appointment-cl.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [SqsCHILE, Arn]
+    environment:
+      EVENT_BUS_NAME: !Ref MyEventBus
+
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    exclude:
+      - "@aws-sdk/*"
+
+resources:
+  Resources:
+    TableAppointment:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Appointment
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+          - AttributeName: "insuredId"
+            AttributeType: "S"
+          - AttributeName: "scheduleId"
+            AttributeType: "N"
+          - AttributeName: "countryISO"
+            AttributeType: "S"
+          - AttributeName: "status"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: "insured-id-index"
+            KeySchema:
+              - AttributeName: insuredId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: "schedule-id-index"
+            KeySchema:
+              - AttributeName: "scheduleId"
+                KeyType: "HASH"
+              - AttributeName: "status"
+                KeyType: "RANGE"
+            Projection:
+              ProjectionType: ALL
+          - IndexName: "country-index"
+            KeySchema:
+              - AttributeName: "countryISO"
+                KeyType: "HASH"
+              - AttributeName: "status"
+                KeyType: "RANGE"
+            Projection:
+              ProjectionType: "ALL"
+          - IndexName: "status-country-index"
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+              - AttributeName: countryISO
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    SnsAppointment:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: "This Is a SNS Topic"
+        TopicName: ${self:service}-${self:provider.stage}-SnsAppointment
+
+    SqsPERU:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-SqsPERU
+
+    SqsCHILE:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${self:provider.stage}-SqsCHILE
+
+    SubscribeSqsPE:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint:
+          Fn::GetAtt:
+            - SqsPERU
+            - Arn
+        TopicArn:
+          Ref: SnsAppointment
+        RawMessageDelivery: true
+        FilterPolicy:
+          countryISO:
+            - PE
+        FilterPolicyScope: MessageBody
+
+    SubscribeSqsCL:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint:
+          Fn::GetAtt:
+            - SqsCHILE
+            - Arn
+        TopicArn:
+          Ref: SnsAppointment
+        RawMessageDelivery: true
+        FilterPolicy:
+          countryISO:
+            - CL
+        FilterPolicyScope: MessageBody
+
+    PolicySqsPE:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref SqsPERU
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: sqs:SendMessage
+              Resource: 
+                Fn::GetAtt:
+                  - SqsPERU
+                  - Arn
+              Principal: "*"
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref SnsAppointment
+          
+    PolicySqsCL:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref SqsCHILE
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action: sqs:SendMessage
+              Resource: 
+                Fn::GetAtt:
+                  - SqsCHILE
+                  - Arn
+              Principal: "*"
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref SnsAppointment
+
+    RdsInstancePE:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBInstanceIdentifier: rds-pe-instance
+        DBName: appointments_pe
+        AllocatedStorage: 20
+        DBInstanceClass: db.t3.micro
+        Engine: mysql
+        MasterUsername: admin
+        MasterUserPassword: Password123!
+        BackupRetentionPeriod: 7
+        MultiAZ: false
+        PubliclyAccessible: false
+        StorageType: gp2
+        Tags:
+          - Key: Country
+            Value: PE
+
+    RdsInstanceCL:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBInstanceIdentifier: rds-cl-instance
+        DBName: appointments_cl
+        AllocatedStorage: 20
+        DBInstanceClass: db.t3.micro
+        Engine: mysql
+        MasterUsername: admin
+        MasterUserPassword: Password123!
+        BackupRetentionPeriod: 7
+        MultiAZ: false
+        PubliclyAccessible: false
+        StorageType: gp2
+        Tags:
+          - Key: Country
+            Value: CL
+
+    MySqsUpdate:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: "MySqsUpdate"
+
+    MyEventBus:
+      Type: AWS::Events::EventBus
+      Properties:
+        Name: MyEventBus
+
+    MyEventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        EventBusName: !Ref MyEventBus
+        EventPattern:
+          source:
+            - appointment_cl
+            - appointment_pe
+          "detail-type":
+            - event_update_appointment
+        Targets:
+          - Arn:
+              Fn::GetAtt:
+                - MySqsUpdate
+                - Arn
+            Id: "SqsClientCL"
+
+    EventBrigdePermission:
+      Type: AWS::SQS::QueuePolicy     
+      Properties:
+        Queues:
+          - Ref: MySqsUpdate
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sqs:SendMessage
+              Resource:
+                Fn::GetAtt:
+                  - MySqsUpdate
+                  - Arn
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    Fn::GetAtt:
+                      - MyEventRule
+                      - Arn
