@@ -59,8 +59,8 @@ src/
 
 ```bash
 # Clona el repositorio
-git clone 
-cd medic-appointments
+git clone https://github.com/DeveloperRafael1996/medic-serverless.git
+cd medic-serverless
 
 # Instala las dependencias
 npm install
@@ -82,7 +82,7 @@ cp .env.example .env
 
 ```bash
 # Desplegar en entorno de desarrollo
-sls serverless deploy --verbose
+sls deploy --verbose
 ```
 
 > Asegúrate de tener configurado `AWS CLI` con permisos adecuados.
@@ -97,14 +97,14 @@ sls serverless deploy --verbose
 | GET    | `/appointments/insured/{insuredId}`      | Obtener citas por asegurado             |
 
 
-Puedes usar el archivo `request.http` incluido para probar desde VSCode.
+Puedes usar el archivo `postman_collection.json` para importar desde Postman.
 
 ---
 
 ## 👨‍💻 Autor
 
 **Rafael Guevara**  
-Backend Developer | Clean Architecture | Cloud | AWS
+Backend Engineer  | Clean Architecture | Cloud | AWS
 
 [LinkedIn](https://www.linkedin.com/in/rafaelguevara)
 

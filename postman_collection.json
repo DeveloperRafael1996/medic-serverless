@@ -1,0 +1,74 @@
+{
+	"info": {
+		"_postman_id": "6cc14d96-94d2-47ab-b1cf-c10be66d50e2",
+		"name": "[ Indra]",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "8274615",
+		"_collection_link": "https://ubuntuserver.postman.co/workspace/AT-Teleservicios~a7f44740-db57-4164-b3bb-d6dd879622fc/collection/8274615-6cc14d96-94d2-47ab-b1cf-c10be66d50e2?action=share&source=collection_link&creator=8274615"
+	},
+	"item": [
+		{
+			"name": "GET",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://nfzjbtrwm4.execute-api.us-east-1.amazonaws.com/dev/appointments/insured/20004",
+					"protocol": "https",
+					"host": [
+						"nfzjbtrwm4",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"appointments",
+						"insured",
+						"20004"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\n{\n  \"insuredId\": \"20004\",\n  \"scheduleId\": 1999,\n  \"countryISO\": \"CL\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://nfzjbtrwm4.execute-api.us-east-1.amazonaws.com/dev/appointments",
+					"protocol": "https",
+					"host": [
+						"nfzjbtrwm4",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"appointments"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
