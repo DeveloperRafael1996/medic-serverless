@@ -3,12 +3,15 @@ import { SnsPublisherRepository } from "./SnsPublisherRepository";
 
 export interface AppointmentRepository {
   save(appointment: Appointment): Promise<void>;
+}
+export interface AppointmentDynamodb {
+  save(appointment: Appointment): Promise<void>;
   markAsCompleted(id: string): Promise<void>;
 }
 
 export class RegisterAppointment {
   constructor(
-    private repo: AppointmentRepository,
+    private repo: AppointmentDynamodb,
     private snsPublisher: SnsPublisherRepository
   ) {}
 
@@ -29,6 +32,8 @@ export class RegisterAppointment {
   }
 
   async update(data: { id: string }) {
+    console.log("Register", data.id);
+
     await this.repo.markAsCompleted(data.id);
   }
 }

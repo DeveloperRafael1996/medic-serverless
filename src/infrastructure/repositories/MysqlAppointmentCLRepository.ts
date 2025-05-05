@@ -3,9 +3,6 @@ import { Appointment } from "../../domain/entities/Appointment";
 import { AppointmentRepository } from "../../application/use-cases/RegisterAppointment";
 
 export class MysqlAppointmentCLRepository implements AppointmentRepository {
-  markAsCompleted(id: string): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
   private async getConnection() {
     return await createConnection({
       host: process.env.DB_HOST_CL,

@@ -5,9 +5,9 @@ import {
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { Appointment } from "../../domain/entities/Appointment";
-import { AppointmentRepository } from "../../application/use-cases/RegisterAppointment";
+import { AppointmentDynamodb } from "../../application/use-cases/RegisterAppointment";
 
-export class DynamoAppointmentRepositoryImpl implements AppointmentRepository {
+export class DynamoAppointmentRepositoryImpl implements AppointmentDynamodb {
   private client = new DynamoDBClient({});
 
   async save(appointment: Appointment): Promise<void> {
@@ -28,23 +28,7 @@ export class DynamoAppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   async markAsCompleted(id: string): Promise<void> {
-    console.log("Id", id);
-
-    const getCmd = new GetItemCommand({
-      TableName: "Appointment",
-      Key: {
-        id: { S: id },
-      },
-    });
-
-    const result = await this.client.send(getCmd);
-
-    console.log("Get Appoiment");
-    console.log(result.Item);
-
-    if (!result.Item) {
-      throw new Error(`Appointment With Id ${id} Not Found`);
-    }
+    console.log("Information Appoiment", id);
 
     const updateCmd = new UpdateItemCommand({
       TableName: "Appointment",
@@ -61,6 +45,11 @@ export class DynamoAppointmentRepositoryImpl implements AppointmentRepository {
       },
     });
 
-    await this.client.send(updateCmd);
+    try {
+      const result = await this.client.send(updateCmd);
+      console.log("✅ Update :", result);
+    } catch (err) {
+      console.error(err);
+    }
   }
 }

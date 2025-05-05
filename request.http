@@ -3,6 +3,6 @@ Content-Type: application/json
 
 {
   "insuredId": "12345",
-  "scheduleId": 1112,
+  "scheduleId": 2222,
   "countryISO": "CL"
 }
